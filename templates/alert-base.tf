@@ -7,14 +7,12 @@ resource "dynatrace_metric_events" "<app_name>_<alert_name>" {
   enabled = true
   summary = "<Alert display name — shown in Dynatrace problems feed>"
 
-  event_type = "PERFORMANCE" # options: PERFORMANCE, ERROR, AVAILABILITY, RESOURCE, CUSTOM_INFO
   event_template {
     title       = "<Problem title shown to on-call team>"
     description = "<What this alert means and what to check first>"
     davis_merge = true
+    event_type  = "PERFORMANCE" # options: PERFORMANCE, ERROR, AVAILABILITY, RESOURCE, CUSTOM_INFO
   }
-
-  metric_selector = "<metric.key>:splitBy():avg:auto:sort(value(avg,descending)):limit(10)"
 
   model_properties {
     type               = "STATIC_THRESHOLD"
@@ -24,6 +22,11 @@ resource "dynatrace_metric_events" "<app_name>_<alert_name>" {
     dealerting_samples = 5
     samples            = 5
     violating_samples  = 3
+  }
+
+  query_definition {
+    type            = "METRIC_SELECTOR"
+    metric_selector = "<metric.key>:splitBy():avg:auto:sort(value(avg,descending)):limit(10)"
   }
 }
 

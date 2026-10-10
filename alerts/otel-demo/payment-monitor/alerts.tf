@@ -2,15 +2,12 @@ resource "dynatrace_metric_events" "otel_demo_payment_error_rate" {
   enabled = true
   summary = "[${var.environment}] Payment Service — High Error Rate"
 
-  event_type = "PERFORMANCE"
-
   event_template {
     title       = "Payment error rate exceeds threshold"
     description = "The payment service error rate has exceeded 10%. Check payment provider connectivity and card validation logic."
     davis_merge = true
+    event_type  = "PERFORMANCE"
   }
-
-  metric_selector = "builtin:service.errors.total.rate:filter(eq(dt.entity.service,SERVICE-payment)):splitBy():avg:auto:sort(value(avg,descending)):limit(10)"
 
   model_properties {
     type               = "STATIC_THRESHOLD"
@@ -20,6 +17,11 @@ resource "dynatrace_metric_events" "otel_demo_payment_error_rate" {
     dealerting_samples = 5
     samples            = 5
     violating_samples  = 3
+  }
+
+  query_definition {
+    type            = "METRIC_SELECTOR"
+    metric_selector = "builtin:service.errors.total.rate:filter(eq(dt.entity.service,SERVICE-payment)):splitBy():avg:auto:sort(value(avg,descending)):limit(10)"
   }
 }
 

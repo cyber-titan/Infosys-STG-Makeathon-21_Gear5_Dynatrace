@@ -4,16 +4,12 @@ resource "dynatrace_document" "otel_demo_payment_monitor" {
   private = false
 
   content = jsonencode({
-    version = 10
+    version = 15
     tiles = {
       "0" = {
         type  = "data"
         title = "Payment Transactions"
-        metricQuery = {
-          metricSelector   = "demo.payment.transactions:splitBy(\"demo.payment.currency\"):sum"
-          resolution       = "auto"
-          spaceAggregation = "AUTO"
-        }
+        query = "timeseries sum(`demo.payment.transactions`), by:{`demo.payment.currency`}"
         visualizationSettings = {
           chartSettings = { gapPolicy = "connect" }
         }
@@ -28,11 +24,7 @@ resource "dynatrace_document" "otel_demo_payment_monitor" {
       "1" = {
         type  = "data"
         title = "Payment Service — Error Rate"
-        metricQuery = {
-          metricSelector   = "builtin:service.errors.total.rate:filter(eq(dt.entity.service,SERVICE-payment)):avg"
-          resolution       = "auto"
-          spaceAggregation = "AUTO"
-        }
+        query = "timeseries avg(`builtin:service.errors.total.rate`), by:{dt.entity.service}"
         visualizationSettings = {
           chartSettings = { gapPolicy = "connect" }
         }
@@ -47,11 +39,7 @@ resource "dynatrace_document" "otel_demo_payment_monitor" {
       "2" = {
         type  = "data"
         title = "Checkout Service — Response Time"
-        metricQuery = {
-          metricSelector   = "builtin:service.response.time:filter(eq(dt.entity.service,SERVICE-checkout)):avg"
-          resolution       = "auto"
-          spaceAggregation = "AUTO"
-        }
+        query = "timeseries avg(`builtin:service.response.time`), by:{dt.entity.service}"
         visualizationSettings = {
           chartSettings = { gapPolicy = "connect" }
         }

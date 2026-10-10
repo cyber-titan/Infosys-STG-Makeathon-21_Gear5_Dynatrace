@@ -1,22 +1,25 @@
-resource "dynatrace_alerting" "otel_demo_payment_alerting_profile" {
-  name = "[${var.environment}] otel-demo Payment Alerts"
+resource "dynatrace_metric_events" "otel_demo_payment_error_rate" {
+  enabled = true
+  summary = "[${var.environment}] Payment Service — High Error Rate"
 
-  rules {
-    rule {
-      include_mode     = "INCLUDE_ALL"
-      delay_in_minutes = 0
-      severity_level   = "PERFORMANCE"
-      tag_filter {
-        include_mode = "INCLUDE_ALL"
-      }
-    }
-    rule {
-      include_mode     = "INCLUDE_ALL"
-      delay_in_minutes = 0
-      severity_level   = "ERROR"
-      tag_filter {
-        include_mode = "INCLUDE_ALL"
-      }
-    }
+  event_template {
+    title       = "Payment error rate exceeds threshold"
+    description = "The payment service error rate is anomalously high. Check payment provider connectivity and card validation logic."
+    davis_merge = true
+    event_type  = "PERFORMANCE"
+  }
+
+  model_properties {
+    type               = "AUTO_ADAPTIVE_THRESHOLD"
+    alert_condition    = "ABOVE"
+    alert_on_no_data   = false
+    dealerting_samples = 5
+    samples            = 5
+    violating_samples  = 3
+  }
+
+  query_definition {
+    type            = "METRIC_SELECTOR"
+    metric_selector = "builtin:service.errors.total.rate:filter(eq(dt.entity.service,SERVICE-payment)):splitBy():avg:auto:sort(value(avg,descending)):limit(10)"
   }
 }

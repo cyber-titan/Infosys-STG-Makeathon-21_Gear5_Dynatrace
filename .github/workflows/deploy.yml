@@ -18,6 +18,7 @@ jobs:
     env:
       TF_VAR_dt_env_url: ${{ secrets.DT_ENV_URL }}
       TF_VAR_dt_api_token: ${{ secrets.DT_API_TOKEN }}
+      TF_VAR_platform_token: ${{ secrets.DT_PLATFORM_TOKEN }}
 
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────────────

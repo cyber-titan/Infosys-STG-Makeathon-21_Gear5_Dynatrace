@@ -1,108 +1,73 @@
-resource "dynatrace_json_dashboard" "otel_demo_payment_monitor" {
-  contents = jsonencode({
-    dashboardMetadata = {
-      name   = "[${var.environment}] Payment Monitor — otel-demo"
-      shared = false
-      owner  = "ai-generator"
-      tags   = ["generated", "otel-demo", "payment-monitor"]
-    }
-    tiles = [
-      {
-        name       = "Payment Overview"
-        tileType   = "HEADER"
-        configured = true
-        bounds     = { top = 0, left = 0, width = 1482, height = 38 }
-      },
-      {
-        name       = "Payment Transactions"
-        tileType   = "DATA_EXPLORER"
-        configured = true
-        bounds     = { top = 38, left = 0, width = 494, height = 304 }
-        customName = "Payment Transactions"
-        queries = [
-          {
-            id               = "A"
-            metric           = "demo.payment.transactions"
-            spaceAggregation = "SUM"
-            timeAggregation  = "DEFAULT"
-            splitBy          = ["demo.payment.currency"]
-            enabled          = true
-          }
-        ]
-        visualConfig = {
-          type  = "GRAPH_CHART"
-          rules = [{ matcher = "A", unitTransform = "Count" }]
+resource "dynatrace_document" "otel_demo_payment_monitor" {
+  name    = "[${var.environment}] Payment Monitor — otel-demo"
+  type    = "dashboard"
+  private = false
+
+  content = jsonencode({
+    version = 10
+    tiles = {
+      "0" = {
+        type  = "data"
+        title = "Payment Transactions"
+        metricQuery = {
+          metricSelector   = "demo.payment.transactions:splitBy(\"demo.payment.currency\"):sum"
+          resolution       = "auto"
+          spaceAggregation = "AUTO"
         }
-      },
-      {
-        name       = "Open Problems"
-        tileType   = "OPEN_PROBLEMS"
-        configured = true
-        bounds     = { top = 38, left = 494, width = 494, height = 304 }
-      },
-      {
-        name       = "Checkout Service — Request Rate"
-        tileType   = "DATA_EXPLORER"
-        configured = true
-        bounds     = { top = 38, left = 988, width = 494, height = 304 }
-        customName = "Checkout Request Rate"
-        queries = [
-          {
-            id               = "A"
-            metric           = "builtin:service.requestCount.total"
-            spaceAggregation = "SUM"
-            timeAggregation  = "DEFAULT"
-            filterBy         = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-checkout" }] }
-            enabled          = true
-          }
-        ]
-        visualConfig = {
-          type  = "GRAPH_CHART"
-          rules = [{ matcher = "A", unitTransform = "Count/min" }]
+        visualizationSettings = {
+          chartSettings = { gapPolicy = "connect" }
         }
-      },
-      {
-        name       = "Payment Service — Error Rate"
-        tileType   = "DATA_EXPLORER"
-        configured = true
-        bounds     = { top = 342, left = 0, width = 494, height = 304 }
-        customName = "Payment Error Rate"
-        queries = [
-          {
-            id               = "A"
-            metric           = "builtin:service.errors.total.rate"
-            spaceAggregation = "AVG"
-            timeAggregation  = "DEFAULT"
-            filterBy         = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-payment" }] }
-            enabled          = true
-          }
-        ]
-        visualConfig = {
-          type  = "GRAPH_CHART"
-          rules = [{ matcher = "A", unitTransform = "Percent" }]
-        }
-      },
-      {
-        name       = "Checkout Service — Response Time"
-        tileType   = "DATA_EXPLORER"
-        configured = true
-        bounds     = { top = 342, left = 494, width = 494, height = 304 }
-        customName = "Checkout Response Time"
-        queries = [
-          {
-            id               = "A"
-            metric           = "builtin:service.response.time"
-            spaceAggregation = "AVG"
-            timeAggregation  = "DEFAULT"
-            filterBy         = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-checkout" }] }
-            enabled          = true
-          }
-        ]
-        visualConfig = {
-          type  = "GRAPH_CHART"
-          rules = [{ matcher = "A", unitTransform = "MilliSecond" }]
+        querySettings = {
+          maxResultRecords       = 1000
+          defaultScanLimitGbytes = 500
+          maxResultMegaBytes     = 1
+          defaultSamplingRatio   = 10
+          enableSampling         = false
         }
       }
-    ]
+      "1" = {
+        type  = "data"
+        title = "Payment Service — Error Rate"
+        metricQuery = {
+          metricSelector   = "builtin:service.errors.total.rate:filter(eq(dt.entity.service,SERVICE-payment)):avg"
+          resolution       = "auto"
+          spaceAggregation = "AUTO"
+        }
+        visualizationSettings = {
+          chartSettings = { gapPolicy = "connect" }
+        }
+        querySettings = {
+          maxResultRecords       = 1000
+          defaultScanLimitGbytes = 500
+          maxResultMegaBytes     = 1
+          defaultSamplingRatio   = 10
+          enableSampling         = false
+        }
+      }
+      "2" = {
+        type  = "data"
+        title = "Checkout Service — Response Time"
+        metricQuery = {
+          metricSelector   = "builtin:service.response.time:filter(eq(dt.entity.service,SERVICE-checkout)):avg"
+          resolution       = "auto"
+          spaceAggregation = "AUTO"
+        }
+        visualizationSettings = {
+          chartSettings = { gapPolicy = "connect" }
+        }
+        querySettings = {
+          maxResultRecords       = 1000
+          defaultScanLimitGbytes = 500
+          maxResultMegaBytes     = 1
+          defaultSamplingRatio   = 10
+          enableSampling         = false
+        }
+      }
+    }
+    layouts = {
+      "0" = { x = 0, y = 0, w = 8, h = 4 }
+      "1" = { x = 8, y = 0, w = 8, h = 4 }
+      "2" = { x = 0, y = 4, w = 8, h = 4 }
+    }
   })
 }

@@ -135,13 +135,17 @@ jobs:
 
       # ── 10. Commit state file back to repo ────────────────────────────────────
       # .gitignore excludes *.tfstate so we force-add it.
-      # State has no secrets — only resource IDs Terraform needs to track deployed resources.
+      # Uses GH_PAT (Personal Access Token) to bypass branch protection on push —
+      # GITHUB_TOKEN cannot push directly to protected branches without a PR.
       - name: Commit Terraform state
         run: |
           cp tf_workspace/terraform.tfstate terraform/terraform.tfstate
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Use PAT in remote URL so push bypasses branch protection PR requirement
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ github.repository }}
 
           git add -f terraform/terraform.tfstate
 

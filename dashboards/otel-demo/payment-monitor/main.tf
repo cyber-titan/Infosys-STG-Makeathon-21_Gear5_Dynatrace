@@ -8,8 +8,8 @@ resource "dynatrace_document" "otel_demo_payment_monitor" {
     tiles = {
       "0" = {
         type  = "data"
-        title = "Payment Transactions"
-        query = "timeseries sum(`demo.payment.transactions`), by:{`demo.payment.currency`}"
+        title = "All Services — Request Count"
+        query = "timeseries sum(`builtin:service.requestCount.total`), by:{dt.entity.service}"
         visualizationSettings = {
           chartSettings = { gapPolicy = "connect" }
         }
@@ -23,7 +23,7 @@ resource "dynatrace_document" "otel_demo_payment_monitor" {
       }
       "1" = {
         type  = "data"
-        title = "Payment Service — Error Rate"
+        title = "All Services — Error Rate"
         query = "timeseries avg(`builtin:service.errors.total.rate`), by:{dt.entity.service}"
         visualizationSettings = {
           chartSettings = { gapPolicy = "connect" }
@@ -38,7 +38,7 @@ resource "dynatrace_document" "otel_demo_payment_monitor" {
       }
       "2" = {
         type  = "data"
-        title = "Checkout Service — Response Time"
+        title = "All Services — Response Time"
         query = "timeseries avg(`builtin:service.response.time`), by:{dt.entity.service}"
         visualizationSettings = {
           chartSettings = { gapPolicy = "connect" }

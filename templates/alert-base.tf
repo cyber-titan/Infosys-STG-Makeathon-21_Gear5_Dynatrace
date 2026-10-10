@@ -7,7 +7,7 @@ resource "dynatrace_metric_events" "<app_name>_<alert_name>" {
   enabled = true
   summary = "<Alert display name — shown in Dynatrace problems feed>"
 
-  event_type     = "PERFORMANCE"   # options: PERFORMANCE, ERROR, AVAILABILITY, RESOURCE, CUSTOM_INFO
+  event_type = "PERFORMANCE" # options: PERFORMANCE, ERROR, AVAILABILITY, RESOURCE, CUSTOM_INFO
   event_template {
     title       = "<Problem title shown to on-call team>"
     description = "<What this alert means and what to check first>"
@@ -18,8 +18,8 @@ resource "dynatrace_metric_events" "<app_name>_<alert_name>" {
 
   model_properties {
     type               = "STATIC_THRESHOLD"
-    threshold          = <numeric_threshold>      # e.g. 0.05 for 5% error rate
-    alert_condition    = "ABOVE"                  # ABOVE or BELOW
+    threshold          = 10      # replace with actual threshold value
+    alert_condition    = "ABOVE" # ABOVE or BELOW
     alert_on_no_data   = false
     dealerting_samples = 5
     samples            = 5

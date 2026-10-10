@@ -1,6 +1,6 @@
 resource "dynatrace_metric_events" "otel_demo_payment_error_rate" {
-  enabled  = true
-  summary  = "[${var.environment}] Payment Service — High Error Rate"
+  enabled = true
+  summary = "[${var.environment}] Payment Service — High Error Rate"
 
   event_type = "PERFORMANCE"
 
@@ -13,13 +13,13 @@ resource "dynatrace_metric_events" "otel_demo_payment_error_rate" {
   metric_selector = "builtin:service.errors.total.rate:filter(eq(dt.entity.service,SERVICE-payment)):splitBy():avg:auto:sort(value(avg,descending)):limit(10)"
 
   model_properties {
-    type                 = "STATIC_THRESHOLD"
-    threshold            = 10
-    alert_condition      = "ABOVE"
-    alert_on_no_data     = false
-    dealerting_samples   = 5
-    samples              = 5
-    violating_samples    = 3
+    type               = "STATIC_THRESHOLD"
+    threshold          = 10
+    alert_condition    = "ABOVE"
+    alert_on_no_data   = false
+    dealerting_samples = 5
+    samples            = 5
+    violating_samples  = 3
   }
 }
 
@@ -28,14 +28,14 @@ resource "dynatrace_alerting" "otel_demo_payment_alerting_profile" {
 
   rules {
     rule {
-      include_mode      = "INCLUDE_ALL"
-      delay_in_minutes  = 0
-      severity_level    = "PERFORMANCE"
+      include_mode     = "INCLUDE_ALL"
+      delay_in_minutes = 0
+      severity_level   = "PERFORMANCE"
     }
     rule {
-      include_mode      = "INCLUDE_ALL"
-      delay_in_minutes  = 0
-      severity_level    = "ERROR"
+      include_mode     = "INCLUDE_ALL"
+      delay_in_minutes = 0
+      severity_level   = "ERROR"
     }
   }
 }

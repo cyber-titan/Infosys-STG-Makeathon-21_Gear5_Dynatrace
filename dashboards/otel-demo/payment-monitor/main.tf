@@ -21,16 +21,16 @@ resource "dynatrace_json_dashboard" "otel_demo_payment_monitor" {
         customName = "Payment Transactions"
         queries = [
           {
-            id         = "A"
-            metric     = "demo.payment.transactions"
+            id               = "A"
+            metric           = "demo.payment.transactions"
             spaceAggregation = "SUM"
             timeAggregation  = "DEFAULT"
-            splitBy    = ["demo.payment.currency"]
-            enabled    = true
+            splitBy          = ["demo.payment.currency"]
+            enabled          = true
           }
         ]
         visualConfig = {
-          type = "GRAPH_CHART"
+          type  = "GRAPH_CHART"
           rules = [{ matcher = "A", unitTransform = "Count" }]
         }
       },
@@ -48,16 +48,16 @@ resource "dynatrace_json_dashboard" "otel_demo_payment_monitor" {
         customName = "Checkout Request Rate"
         queries = [
           {
-            id         = "A"
-            metric     = "builtin:service.requestCount.total"
+            id               = "A"
+            metric           = "builtin:service.requestCount.total"
             spaceAggregation = "SUM"
             timeAggregation  = "DEFAULT"
-            filterBy   = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-checkout" }] }
-            enabled    = true
+            filterBy         = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-checkout" }] }
+            enabled          = true
           }
         ]
         visualConfig = {
-          type = "GRAPH_CHART"
+          type  = "GRAPH_CHART"
           rules = [{ matcher = "A", unitTransform = "Count/min" }]
         }
       },
@@ -69,16 +69,16 @@ resource "dynatrace_json_dashboard" "otel_demo_payment_monitor" {
         customName = "Payment Error Rate"
         queries = [
           {
-            id         = "A"
-            metric     = "builtin:service.errors.total.rate"
+            id               = "A"
+            metric           = "builtin:service.errors.total.rate"
             spaceAggregation = "AVG"
             timeAggregation  = "DEFAULT"
-            filterBy   = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-payment" }] }
-            enabled    = true
+            filterBy         = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-payment" }] }
+            enabled          = true
           }
         ]
         visualConfig = {
-          type = "GRAPH_CHART"
+          type  = "GRAPH_CHART"
           rules = [{ matcher = "A", unitTransform = "Percent" }]
         }
       },
@@ -90,16 +90,16 @@ resource "dynatrace_json_dashboard" "otel_demo_payment_monitor" {
         customName = "Checkout Response Time"
         queries = [
           {
-            id         = "A"
-            metric     = "builtin:service.response.time"
+            id               = "A"
+            metric           = "builtin:service.response.time"
             spaceAggregation = "AVG"
             timeAggregation  = "DEFAULT"
-            filterBy   = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-checkout" }] }
-            enabled    = true
+            filterBy         = { dimensionFilter = [{ filterType = "DIMENSION", key = "dt.entity.service", value = "SERVICE-checkout" }] }
+            enabled          = true
           }
         ]
         visualConfig = {
-          type = "GRAPH_CHART"
+          type  = "GRAPH_CHART"
           rules = [{ matcher = "A", unitTransform = "MilliSecond" }]
         }
       }

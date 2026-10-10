@@ -1,0 +1,154 @@
+name: Deploy Dynatrace Dashboards
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Validate & Deploy (${{ github.ref_name }})
+    runs-on: ubuntu-latest
+
+    env:
+      TF_VAR_dt_env_url: ${{ secrets.DT_ENV_URL }}
+      TF_VAR_dt_api_token: ${{ secrets.DT_API_TOKEN }}
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 2. Resolve environment from branch ───────────────────────────────────
+      - name: Set environment prefix
+        id: env_prefix
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          if [ "$BRANCH" = "main" ]; then
+            echo "TF_VAR_environment=PROD" >> "$GITHUB_ENV"
+            echo "environment=PROD" >> "$GITHUB_OUTPUT"
+          elif [ "$BRANCH" = "staging" ]; then
+            echo "TF_VAR_environment=STAGING" >> "$GITHUB_ENV"
+            echo "environment=STAGING" >> "$GITHUB_OUTPUT"
+          else
+            echo "TF_VAR_environment=DEV" >> "$GITHUB_ENV"
+            echo "environment=DEV" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── 3. Set up Terraform ──────────────────────────────────────────────────
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.9"
+
+      # ── 4. Build flat workspace ──────────────────────────────────────────────
+      # Terraform only reads .tf files in its working directory — not subdirs.
+      # Copy terraform/*.tf + all dashboards/**/*.tf + alerts/**/*.tf into one
+      # flat workspace so a single terraform apply deploys everything.
+      - name: Assemble Terraform workspace
+        run: |
+          mkdir -p tf_workspace
+
+          # Core provider / backend / variables
+          cp terraform/*.tf tf_workspace/
+
+          # Dashboard configs — flatten nested paths to unique filenames
+          # dashboards/easytrade/payment-failure/main.tf →
+          #   tf_workspace/dashboard__easytrade__payment-failure__main.tf
+          find dashboards -name "*.tf" | while read -r f; do
+            flat_name=$(echo "$f" | sed 's|/|__|g')
+            cp "$f" "tf_workspace/$flat_name"
+          done
+
+          # Alert configs — same flattening
+          find alerts -name "*.tf" | while read -r f; do
+            flat_name=$(echo "$f" | sed 's|/|__|g')
+            cp "$f" "tf_workspace/$flat_name"
+          done
+
+          echo "Workspace contents:"
+          ls -la tf_workspace/
+
+      # ── 5. Copy existing state into workspace ─────────────────────────────────
+      - name: Restore Terraform state
+        run: |
+          if [ -f terraform/terraform.tfstate ]; then
+            cp terraform/terraform.tfstate tf_workspace/terraform.tfstate
+            echo "State file restored."
+          else
+            echo "No existing state file — first run."
+          fi
+
+      # ── 6. Run validation ─────────────────────────────────────────────────────
+      - name: Run validation checks
+        run: |
+          chmod +x validation/validate.sh
+          bash validation/validate.sh
+
+      # ── 7. Terraform init ─────────────────────────────────────────────────────
+      - name: Terraform init
+        working-directory: tf_workspace
+        run: terraform init
+
+      # ── 8. Terraform plan (show what will change) ─────────────────────────────
+      - name: Terraform plan
+        working-directory: tf_workspace
+        run: terraform plan -no-color
+        continue-on-error: false
+
+      # ── 9. Terraform apply with retry (handles Dynatrace 429 rate limits) ─────
+      - name: Terraform apply
+        working-directory: tf_workspace
+        run: |
+          MAX_ATTEMPTS=3
+          ATTEMPT=1
+          DELAY=30
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "Apply attempt $ATTEMPT of $MAX_ATTEMPTS..."
+
+            if terraform apply -auto-approve -no-color; then
+              echo "Apply succeeded on attempt $ATTEMPT."
+              break
+            fi
+
+            EXIT_CODE=$?
+
+            if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+              echo "Apply failed after $MAX_ATTEMPTS attempts."
+              exit $EXIT_CODE
+            fi
+
+            echo "Apply failed (possible 429). Waiting ${DELAY}s before retry..."
+            sleep $DELAY
+            DELAY=$((DELAY * 2))
+            ATTEMPT=$((ATTEMPT + 1))
+          done
+
+      # ── 10. Commit state file back to repo ────────────────────────────────────
+      # .gitignore excludes *.tfstate so we force-add it.
+      # State has no secrets — only resource IDs Terraform needs to track deployed resources.
+      - name: Commit Terraform state
+        run: |
+          cp tf_workspace/terraform.tfstate terraform/terraform.tfstate
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -f terraform/terraform.tfstate
+
+          # Only commit if there are actual changes to state
+          if git diff --staged --quiet; then
+            echo "State unchanged — nothing to commit."
+          else
+            git commit -m "chore: update terraform state after deploy [${{ steps.env_prefix.outputs.environment }}] [skip ci]"
+            git push origin ${{ github.ref_name }}
+          fi
